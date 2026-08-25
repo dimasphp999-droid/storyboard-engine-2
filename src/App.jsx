@@ -175,7 +175,7 @@ export default function App() {
     
     try {
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
       
       let promptText = `Analisis naskah ini berdasarkan materi "5 Levels of AI Video Prompting". 
 Pecah cerita menjadi scenes, dan dalam setiap scene buat daftar "shots" (Level 4 Continuity).
@@ -260,7 +260,7 @@ Format output HARUS JSON Valid Murni tanpa markdown (\`\`\`json) dengan struktur
     setIsAutoDescribing(true);
     try {
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
       const res = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -324,7 +324,7 @@ Level 5 (Aset @tags yg dipakai): ${tagsSummary || 'Tidak ada'}
 `;
 
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
       const res = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
