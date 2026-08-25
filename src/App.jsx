@@ -91,6 +91,8 @@ export default function App() {
 
   // Script Analyzer
   const [scriptInput, setScriptInput] = useState('');
+  const [pdfFile, setPdfFile] = useState(null);
+  const [pdfName, setPdfName] = useState('');
   const [isAnalyzingScript, setIsAnalyzingScript] = useState(false);
   
   // Asset Management
@@ -145,15 +147,37 @@ export default function App() {
     addToast('Tersalin ke clipboard');
   };
 
+  const handlePdfUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+      return addToast('Hanya mendukung format PDF', 'error');
+    }
+    
+    setPdfName(file.name);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target.result.split(',')[1];
+      setPdfFile(base64);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearPdf = () => {
+    setPdfFile(null);
+    setPdfName('');
+  };
+
   const handleAnalyzeScript = async () => {
-    if (!scriptInput.trim()) return addToast('Naskah kosong', 'error');
+    if (!scriptInput.trim() && !pdfFile) return addToast('Teks naskah atau file PDF kosong', 'error');
     setIsAnalyzingScript(true);
     setDetectedElements(null);
     
     try {
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-      const prompt = `Analisis naskah ini berdasarkan materi "5 Levels of AI Video Prompting". 
+      
+      let promptText = `Analisis naskah ini berdasarkan materi "5 Levels of AI Video Prompting". 
 Pecah cerita menjadi scenes, dan dalam setiap scene buat daftar "shots" (Level 4 Continuity).
 SELAIN ITU, ekstrak semua elemen yang terlibat dalam cerita: Karakter, Properti (barang), dan Lokasi (environment).
 Format output HARUS JSON Valid Murni tanpa markdown (\`\`\`json) dengan struktur persis seperti ini:
@@ -173,14 +197,28 @@ Format output HARUS JSON Valid Murni tanpa markdown (\`\`\`json) dengan struktur
       ]
     }
   ]
-}
-Naskah: ${scriptInput}`;
+}`;
+
+      if (scriptInput.trim()) {
+        promptText += `\n\nNaskah:\n${scriptInput}`;
+      } else {
+        promptText += `\n\nAnalisis dokumen PDF yang dilampirkan ini secara saksama.`;
+      }
+
+      const parts = [{ text: promptText }];
+      
+      // Jika ada file PDF, masukkan langsung ke mata AI
+      if (pdfFile) {
+        parts.push({
+          inlineData: { mimeType: "application/pdf", data: pdfFile }
+        });
+      }
 
       const res = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
+          contents: [{ parts: parts }],
           generationConfig: { responseMimeType: "application/json" }
         })
       });
@@ -200,14 +238,14 @@ Naskah: ${scriptInput}`;
           setScenes(parsedData);
         }
         
-        addToast('Naskah beserta Elemen berhasil dianalisis!');
-        setScriptInput('');
+        addToast('Naskah dan Elemen berhasil dianalisis!');
+        if (!pdfFile) setScriptInput('');
       } else {
         throw new Error("No response from AI");
       }
     } catch (error) { 
-      console.error(error);
-      addToast('Gagal menganalisis naskah. Format balasan AI tidak sesuai.', 'error'); 
+      console.error(error); // Variabel error wajib dipakai agar robot GitHub tidak marah
+      addToast('Gagal menganalisis naskah. Periksa kembali file atau teks Anda.', 'error'); 
     } 
     finally { setIsAnalyzingScript(false); }
   };
@@ -460,10 +498,31 @@ Level 5 (Aset @tags yg dipakai): ${tagsSummary || 'Tidak ada'}
                 <textarea
                   value={scriptInput} onChange={e => setScriptInput(e.target.value)}
                   placeholder="Paste naskah kasar Anda di sini..."
-                  className="w-full h-32 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-sm focus:border-amber-500 resize-none mb-3"
+                  className="w-full h-32 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-sm focus:border-amber-500 resize-none mb-3 disabled:opacity-50"
+                  disabled={!!pdfFile}
                 />
-                <button onClick={handleAnalyzeScript} disabled={isAnalyzingScript} className="bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold py-2 px-5 rounded-xl text-sm disabled:opacity-50 flex items-center gap-2">
-                  <Icons.Sparkles /> {isAnalyzingScript ? 'Menganalisis...' : 'Otomatis Pecah Jadi Shot List'}
+                
+                {/* PDF Upload Section */}
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4 p-3 bg-zinc-950 border border-zinc-800 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <label className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition-colors flex items-center gap-2">
+                      <Icons.FileText /> Upload Naskah PDF
+                      <input type="file" accept="application/pdf" className="hidden" onChange={handlePdfUpload} />
+                    </label>
+                    {pdfName && (
+                      <div className="flex items-center gap-2 text-xs text-amber-400 bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-500/20">
+                        <span>{pdfName}</span>
+                        <button onClick={clearPdf} className="hover:text-amber-200 flex items-center"><Icons.X /></button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-zinc-500">
+                    *Teks manual akan diabaikan jika PDF diunggah. AI akan langsung membaca file PDF Anda.
+                  </div>
+                </div>
+
+                <button onClick={handleAnalyzeScript} disabled={isAnalyzingScript || (!scriptInput.trim() && !pdfFile)} className="w-full bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold py-3 px-5 rounded-xl text-sm disabled:opacity-50 flex justify-center items-center gap-2">
+                  <Icons.Sparkles /> {isAnalyzingScript ? 'AI Sedang Membaca & Menganalisis...' : 'Otomatis Pecah Jadi Shot List'}
                 </button>
               </div>
 
