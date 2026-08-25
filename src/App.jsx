@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 
-// --- ICONS (SVG) ---
 const Icons = {
   Film: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" /></svg>,
   LayoutDashboard: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
@@ -20,7 +19,6 @@ const Icons = {
   Download: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
 };
 
-// --- INDEXEDDB SETUP ---
 const DB_NAME = 'StoryboardStudioDB';
 const DB_VERSION = 1;
 
@@ -43,9 +41,7 @@ const saveToDB = async (store, data) => {
     const db = await initDB();
     const tx = db.transaction(store, 'readwrite');
     tx.objectStore(store).put(data, 'data');
-  } catch (error) { 
-    console.error('DB Save Error:', error); 
-  }
+  } catch (error) { console.error('DB Save Error:', error); }
 };
 
 const getFromDB = async (store) => {
@@ -63,13 +59,12 @@ const getFromDB = async (store) => {
   }
 };
 
-// Default Assets dari Materi Youri van Hofwegen
 const SAMPLE_ASSETS = [
   {
     id: 'asset-1',
     category: 'character',
     name: '@ManCool',
-    description: 'Pria dengan hidung datar, rambut hitam dicukur sangat pendek, mengenakan jaket.',
+    description: 'Pria dengan hidung datar, rambut hitam dicukur sangat pendek, mengenakan jaket kulit lusuh.',
     images: ['']
   },
   {
@@ -124,9 +119,9 @@ export default function App() {
       const savedScenes = await getFromDB('scenes');
       const savedHistory = await getFromDB('history');
       
-      setAssets(savedAssets || SAMPLE_ASSETS);
-      setScenes(savedScenes || []);
-      setPromptHistory(savedHistory || []);
+      setAssets(Array.isArray(savedAssets) ? savedAssets : SAMPLE_ASSETS);
+      setScenes(Array.isArray(savedScenes) ? savedScenes : []);
+      setPromptHistory(Array.isArray(savedHistory) ? savedHistory : []);
       setIsDbLoaded(true);
     };
     loadDB();
@@ -157,7 +152,7 @@ export default function App() {
       const prompt = `Analisis naskah ini berdasarkan materi "5 Levels of AI Video Prompting". 
 Pecah cerita menjadi scenes, dan dalam setiap scene buat daftar "shots" (Level 4 Continuity).
 Untuk setiap shot, ekstrak parameter untuk Level 2 dan 3: subject, action, setting, lighting, mood, cameraMotion.
-Format output HARUS JSON Valid seperti ini (Jangan gunakan format markdown):
+Format output HARUS JSON Array murni seperti ini (tanpa backticks, tanpa kata markdown):
 [
   {
     "id": "scene-1", "title": "Judul", "summary": "Ringkasan",
@@ -182,15 +177,26 @@ Naskah: ${scriptInput}`;
       const rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text;
       
       if (rawJson) {
-        // PERBAIKAN: Membersihkan sisa-sisa markdown ```json jika AI membandel
-        const cleanJson = rawJson.replace(/```json/gi, '').replace(/```/g, '').trim();
-        setScenes(JSON.parse(cleanJson));
+        // Membersihkan markdown secara ekstrem
+        let cleanJson = rawJson.replace(/```json/gi, '').replace(/```/g, '').trim();
+        let parsedData = JSON.parse(cleanJson);
+        
+        // Pelindung (Safety Check) agar tidak crash jika AI mengembalikan Object bukan Array
+        if (!Array.isArray(parsedData)) {
+          if (parsedData.scenes && Array.isArray(parsedData.scenes)) {
+            parsedData = parsedData.scenes;
+          } else {
+            parsedData = [parsedData];
+          }
+        }
+        
+        setScenes(parsedData);
         addToast('Naskah berhasil dianalisis!');
         setScriptInput('');
       }
     } catch (error) { 
-      console.error('Error Analisis Naskah:', error);
-      addToast('Gagal menganalisis naskah. Pastikan teks naskah valid.', 'error'); 
+      console.error(error);
+      addToast('Gagal menganalisis naskah. AI memberikan format yang salah.', 'error'); 
     } 
     finally { setIsAnalyzingScript(false); }
   };
@@ -227,7 +233,7 @@ Naskah: ${scriptInput}`;
         addToast('Deskripsi visual otomatis berhasil dibuat');
       }
     } catch (error) { 
-      console.error('Error Auto Describe:', error);
+      console.error(error);
       addToast('Gagal memproses deskripsi otomatis', 'error'); 
     } 
     finally { setIsAutoDescribing(false); }
@@ -254,7 +260,7 @@ Aturan:
 - Level 4: Buat ini terasa seperti bagian dari urutan film, gunakan "HARD CUT" jika ada instruksi transisi, gabungkan parameter sebelumnya.
 - Level 5: Masukkan parameter sebelumnya, dan WAJIB ganti penyebutan subjek/objek dengan @tags yang diberikan. Di akhir prompt, beri instruksi tegas bahwa @tags tidak boleh berubah wujudnya di sepanjang video.
 
-Selalu kembalikan JSON Murni tanpa format markdown: { "positivePrompt": "...", "negativePrompt": "..." }`;
+Selalu kembalikan JSON Murni tanpa markdown: { "positivePrompt": "...", "negativePrompt": "..." }`;
 
       const userPrompt = `
 DATA INPUT:
@@ -285,15 +291,14 @@ Level 5 (Aset @tags yg dipakai): ${tagsSummary || 'Tidak ada'}
       const rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text;
       
       if (rawJson) {
-        // PERBAIKAN: Membersihkan sisa-sisa markdown ```json
-        const cleanJson = rawJson.replace(/```json/gi, '').replace(/```/g, '').trim();
+        let cleanJson = rawJson.replace(/```json/gi, '').replace(/```/g, '').trim();
         setGeneratedPromptResult(JSON.parse(cleanJson));
         addToast(`Prompt Level ${promptLevel} berhasil digenerate!`);
       } else {
-        throw new Error("No response from AI");
+        throw new Error("No response");
       }
     } catch (error) { 
-      console.error('Error saat merangkai prompt:', error);
+      console.error(error);
       addToast('Gagal merangkai prompt. Periksa API Key.', 'error'); 
     } 
     finally { setIsGeneratingPrompt(false); }
@@ -328,9 +333,20 @@ Level 5 (Aset @tags yg dipakai): ${tagsSummary || 'Tidak ada'}
       mood: shot.mood || '',
       cameraMotion: shot.cameraMotion || '',
     }));
-    setPromptLevel(4); // Default ke level 4 jika di-import dari naskah
+    setPromptLevel(4); 
     setActiveTab('builder');
     addToast('Shot dimuat ke Builder (Level 4)');
+  };
+
+  // Fungsi untuk membersihkan memori yang korup (Reset)
+  const resetDatabase = () => {
+    if(window.confirm('Ini akan menghapus seluruh Scene dan Asset. Yakin?')) {
+      setScenes([]);
+      setAssets(SAMPLE_ASSETS);
+      setPromptHistory([]);
+      addToast('Memori lokal berhasil direset.');
+      setActiveTab('dashboard');
+    }
   };
 
   return (
@@ -365,6 +381,7 @@ Level 5 (Aset @tags yg dipakai): ${tagsSummary || 'Tidak ada'}
               { id: 'assets', label: 'Saved @tags', icon: Icons.FolderGit2 },
               { id: 'builder', label: 'Scene Builder', icon: Icons.Video },
               { id: 'history', label: 'Riwayat Prompts', icon: Icons.History },
+              { id: 'settings', label: 'Pengaturan / Reset', icon: Icons.Settings },
             ].map(item => (
               <button
                 key={item.id}
@@ -380,7 +397,6 @@ Level 5 (Aset @tags yg dipakai): ${tagsSummary || 'Tidak ada'}
         </div>
       </aside>
 
-      { }
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 p-6 md:p-8 overflow-y-auto w-full relative">
         <div className="max-w-6xl mx-auto space-y-8">
@@ -398,15 +414,15 @@ Level 5 (Aset @tags yg dipakai): ${tagsSummary || 'Tidak ada'}
                   <p className="text-[10px] text-zinc-400 mt-1 uppercase font-bold tracking-wider">Levels Prompt</p>
                 </div>
                 <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl text-center">
-                  <span className="text-3xl font-black text-teal-400">{assets.length}</span>
+                  <span className="text-3xl font-black text-teal-400">{Array.isArray(assets) ? assets.length : 0}</span>
                   <p className="text-[10px] text-zinc-400 mt-1 uppercase font-bold tracking-wider">Saved @tags</p>
                 </div>
                 <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl text-center">
-                  <span className="text-3xl font-black text-sky-400">{scenes.length}</span>
+                  <span className="text-3xl font-black text-sky-400">{Array.isArray(scenes) ? scenes.length : 0}</span>
                   <p className="text-[10px] text-zinc-400 mt-1 uppercase font-bold tracking-wider">Scene Breakdown</p>
                 </div>
                 <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl text-center">
-                  <span className="text-3xl font-black text-indigo-400">{promptHistory.length}</span>
+                  <span className="text-3xl font-black text-indigo-400">{Array.isArray(promptHistory) ? promptHistory.length : 0}</span>
                   <p className="text-[10px] text-zinc-400 mt-1 uppercase font-bold tracking-wider">Riwayat</p>
                 </div>
               </div>
@@ -446,7 +462,6 @@ Level 5 (Aset @tags yg dipakai): ${tagsSummary || 'Tidak ada'}
             </div>
           )}
 
-          { }
           {/* TAB 3: NASKAH / SCRIPT */}
           {activeTab === 'script' && (
             <div className="animate-fadeIn space-y-6">
@@ -463,12 +478,12 @@ Level 5 (Aset @tags yg dipakai): ${tagsSummary || 'Tidak ada'}
               </div>
 
               <div className="space-y-4">
-                {scenes.map(scene => (
+                {Array.isArray(scenes) && scenes.map(scene => (
                   <div key={scene.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
                     <h3 className="font-bold text-amber-400">{scene.title}</h3>
                     <p className="text-sm text-zinc-300 mb-4">{scene.summary}</p>
                     <div className="space-y-3">
-                      {scene.shots?.map((shot, idx) => (
+                      {Array.isArray(scene.shots) && scene.shots.map((shot, idx) => (
                         <div key={shot.id} className="bg-zinc-950 border border-zinc-800 p-4 rounded-lg flex flex-col md:flex-row gap-4 justify-between md:items-center">
                           <div className="text-sm text-zinc-300 flex-1 space-y-1">
                             <div><strong className="text-teal-400">Shot {idx+1}:</strong> {shot.action}</div>
@@ -497,7 +512,7 @@ Level 5 (Aset @tags yg dipakai): ${tagsSummary || 'Tidak ada'}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {assets.map(asset => (
+                {Array.isArray(assets) && assets.map(asset => (
                   <div key={asset.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex gap-4">
                     <div className="w-20 h-20 bg-zinc-950 rounded-lg shrink-0 overflow-hidden flex items-center justify-center border border-zinc-800">
                       {asset.images?.[0] ? <img src={asset.images[0]} alt={asset.name} className="w-full h-full object-cover" /> : <Icons.Image />}
@@ -600,7 +615,7 @@ Level 5 (Aset @tags yg dipakai): ${tagsSummary || 'Tidak ada'}
                       <div className="pt-3 border-t border-zinc-800">
                         <label className="text-[10px] font-bold text-teal-400 uppercase block mb-2">Gunakan Saved @tags</label>
                         <div className="flex flex-wrap gap-2">
-                          {assets.length === 0 ? <span className="text-xs text-zinc-500">Belum ada aset dibuat.</span> : assets.map(asset => (
+                          {Array.isArray(assets) && assets.length === 0 ? <span className="text-xs text-zinc-500">Belum ada aset dibuat.</span> : assets.map(asset => (
                             <button key={asset.id} onClick={() => {
                               const isSel = builderShot.selectedAssetIds.includes(asset.id);
                               setBuilderShot(prev => ({ ...prev, selectedAssetIds: isSel ? prev.selectedAssetIds.filter(id => id !== asset.id) : [...prev.selectedAssetIds, asset.id] }))
@@ -662,7 +677,6 @@ Level 5 (Aset @tags yg dipakai): ${tagsSummary || 'Tidak ada'}
             </div>
           )}
 
-          { }
           {/* TAB 6: HISTORY */}
           {activeTab === 'history' && (
             <div className="animate-fadeIn space-y-6">
@@ -680,7 +694,7 @@ Level 5 (Aset @tags yg dipakai): ${tagsSummary || 'Tidak ada'}
                 </button>
               </div>
               <div className="space-y-4">
-                {promptHistory.length === 0 ? <p className="text-sm text-zinc-500">Belum ada prompt tersimpan.</p> : promptHistory.map(hist => (
+                {Array.isArray(promptHistory) && promptHistory.length === 0 ? <p className="text-sm text-zinc-500">Belum ada prompt tersimpan.</p> : promptHistory.map(hist => (
                   <div key={hist.id} className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl flex flex-col gap-3">
                     <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
                       <span className="text-[10px] text-amber-400 font-bold px-2 py-1 bg-amber-500/10 rounded">LEVEL {hist.level}</span>
@@ -689,6 +703,20 @@ Level 5 (Aset @tags yg dipakai): ${tagsSummary || 'Tidak ada'}
                     <p className="text-xs font-mono text-zinc-300 whitespace-pre-wrap">{hist.positivePrompt}</p>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 7: SETTINGS / RESET */}
+          {activeTab === 'settings' && (
+            <div className="animate-fadeIn space-y-6">
+              <h2 className="text-2xl font-bold">Pengaturan</h2>
+              <div className="bg-red-950/20 border border-red-900/50 p-6 rounded-2xl">
+                <h3 className="text-red-400 font-bold mb-2">Reset Aplikasi</h3>
+                <p className="text-sm text-zinc-400 mb-4">Jika aplikasi terasa berat atau ada data yang error/tersangkut, Anda bisa menghapus seluruh penyimpanan memori (IndexedDB) di browser Anda untuk mengembalikan aplikasi ke kondisi bersih seperti awal.</p>
+                <button onClick={resetDatabase} className="bg-red-900/50 hover:bg-red-800 text-red-200 text-sm font-bold px-5 py-2.5 rounded-xl border border-red-800">
+                  Hapus Seluruh Data & Reset Aplikasi
+                </button>
               </div>
             </div>
           )}
