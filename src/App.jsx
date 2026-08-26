@@ -18,7 +18,11 @@ const Icons = {
   Layers: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>,
   Download: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>,
   Mic: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>,
-  Clock: () => <svg className="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+  Clock: () => <svg className="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  Music: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>,
+  AlertTriangle: () => <svg className="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+  Printer: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
+  Grip: () => <svg className="w-5 h-5 text-zinc-600 cursor-grab active:cursor-grabbing" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 9h8M8 15h8" /></svg>
 };
 
 // --- INDEXEDDB SETUP ---
@@ -59,23 +63,6 @@ const getFromDB = async (store) => {
   } catch (err) { return null; }
 };
 
-const SAMPLE_ASSETS = [
-  {
-    id: 'asset-1',
-    category: 'character',
-    name: '@ManCool',
-    description: 'Pria dengan hidung datar, rambut hitam dicukur sangat pendek, mengenakan jaket kulit hitam.',
-    images: ['']
-  },
-  {
-    id: 'asset-2',
-    category: 'environment',
-    name: '@CarInterior',
-    description: 'Interior mobil sport klasik, pandangan keluar kaca samping memperlihatkan jalan pegunungan cedar.',
-    images: ['']
-  }
-];
-
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isDbLoaded, setIsDbLoaded] = useState(false);
@@ -101,7 +88,7 @@ export default function App() {
 
   // Scene Builder
   const [promptLevel, setPromptLevel] = useState(5);
-  const [aspectRatio, setAspectRatio] = useState('21:9'); // 16:9, 9:16, 21:9
+  const [aspectRatio, setAspectRatio] = useState('21:9'); 
   const [antiGlitch, setAntiGlitch] = useState({ hands: true, slowmo: true, text: true });
   
   const [builderShot, setBuilderShot] = useState({
@@ -114,12 +101,20 @@ export default function App() {
     cameraMotion: 'Low-angle tracking shot, kamera mengunci pada mobil, bergerak cepat',
     continuity: 'HARD CUT dari adegan sebelumnya. Profil samping pengemudi.',
     dialogue: '',
-    selectedAssetIds: ['asset-1', 'asset-2'],
+    audioPrompt: '', // FITUR BARU: Audio Prompt
+    selectedAssetIds: [],
   });
   
   const [generatedPromptResult, setGeneratedPromptResult] = useState(null);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [isAiCinematicLoading, setIsAiCinematicLoading] = useState(false);
+  
+  // Continuity Checker State
+  const [continuityWarning, setContinuityWarning] = useState(null);
+  const [isCheckingContinuity, setIsCheckingContinuity] = useState(false);
+
+  // Timeline Drag & Drop
+  const [draggedItemIdx, setDraggedItemIdx] = useState(null);
 
   useEffect(() => {
     const loadDB = async () => {
@@ -127,7 +122,7 @@ export default function App() {
       const savedScenes = await getFromDB('scenes');
       const savedHistory = await getFromDB('history');
       
-      setAssets(savedAssets || SAMPLE_ASSETS);
+      setAssets(savedAssets || []);
       setScenes(savedScenes || []);
       setPromptHistory(savedHistory || []);
       setIsDbLoaded(true);
@@ -150,12 +145,11 @@ export default function App() {
     addToast('Tersalin ke clipboard');
   };
 
-  // --- Voice Dictation ---
   const handleVoiceDictation = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) return addToast('Browser Anda tidak mendukung fitur Dikte Suara.', 'error');
     
-    if (isListening) return; // Prevent multiple instances
+    if (isListening) return;
     
     const recognition = new SpeechRecognition();
     recognition.lang = 'id-ID';
@@ -191,7 +185,58 @@ export default function App() {
     setPdfName('');
   };
 
-  // --- 1. Breakdown Naskah ---
+  // FITUR 2: AI CONTINUITY CHECKER
+  const handleCheckContinuity = async () => {
+    if (promptHistory.length === 0) return addToast('Belum ada riwayat scene sebelumnya untuk dibandingkan', 'error');
+    
+    setIsCheckingContinuity(true);
+    setContinuityWarning(null);
+
+    try {
+      const lastShot = promptHistory[0]; // Shot terakhir yang digenerate
+      const currentShotStr = `Subject: ${builderShot.subject}, Action: ${builderShot.action}, Setting: ${builderShot.setting}`;
+      
+      const prompt = `Bertindaklah sebagai Script Supervisor/Detektif Kontinuitas Film.
+Adegan Sebelumnya: "${lastShot.positivePrompt}"
+Rencana Adegan Saat Ini: "${currentShotStr}"
+
+Tugas: Periksa apakah ada properti penting, karakter, atau latar tempat yang tiba-tiba hilang/berubah secara tidak logis di adegan saat ini.
+Berikan JSON murni tanpa markdown:
+{
+  "isGlitch": true/false, // true jika ada kesalahan kontinuitas
+  "warningMessage": "Peringatan singkat dalam bahasa Indonesia (maks 2 kalimat)"
+}`;
+
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: "application/json" }
+        })
+      });
+      const data = await res.json();
+      const rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      if (rawJson) {
+        let cleanJson = rawJson.replace(/```json/gi, '').replace(/```/g, '').trim();
+        let result = JSON.parse(cleanJson);
+        if (result.isGlitch) {
+            setContinuityWarning(result.warningMessage);
+            addToast('Peringatan kontinuitas ditemukan!', 'error');
+        } else {
+            addToast('Kontinuitas aman! Tidak ada masalah.');
+        }
+      }
+    } catch (err) { 
+        console.error(err); addToast('Gagal memeriksa kontinuitas', 'error'); 
+    } finally { 
+        setIsCheckingContinuity(false); 
+    }
+  };
+
   const handleAnalyzeScript = async () => {
     if (!scriptInput.trim() && !pdfFile) return addToast('Teks naskah atau file PDF kosong', 'error');
     setIsAnalyzingScript(true);
@@ -264,7 +309,6 @@ Format output HARUS JSON Valid Murni tanpa markdown (\`\`\`json) dengan struktur
     finally { setIsAnalyzingScript(false); }
   };
 
-  // --- 2. Transfer Shot ke Builder ---
   const applyShotToBuilder = (shot) => {
     setBuilderShot(prev => ({
       ...prev,
@@ -274,42 +318,43 @@ Format output HARUS JSON Valid Murni tanpa markdown (\`\`\`json) dengan struktur
       lighting: shot.lighting || '',
       mood: shot.mood || '',
       cameraMotion: shot.cameraMotion || '',
-      dialogue: '', // KUNCI: Bersihkan dialog lama
-      continuity: '', // KUNCI: Bersihkan transisi lama
-      lazyOneLiner: `${shot.subject || 'Seseorang'} ${shot.action || 'beraksi'} di ${shot.setting || 'suatu tempat'}` // KUNCI: Sinkronkan Ide Instan
+      dialogue: '',
+      continuity: '', 
+      audioPrompt: '', // Reset audio
+      lazyOneLiner: `${shot.subject || 'Seseorang'} ${shot.action || 'beraksi'} di ${shot.setting || 'suatu tempat'}`
     }));
     setPromptLevel(4);
     setActiveTab('builder');
     addToast('Shot berhasil dimuat ke Builder');
   };
 
-  // --- 3. Sutradara AI ---
+  // FITUR 3: AUDIO PROMPT DI SUTRADARA AI
   const handleAiCinematicDirector = async () => {
     setIsAiCinematicLoading(true);
     try {
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
       
-      // MENGUNCI KONTEKS SECARA KETAT
       const prompt = `Bertindaklah sebagai Sutradara Film Profesional. Berdasarkan dasar adegan berikut:
 - Subjek: ${builderShot.subject || 'Karakter utama'}
 - Aksi: ${builderShot.action || builderShot.lazyOneLiner || 'Sebuah adegan dramatis'}
 - Latar Tempat: ${builderShot.setting || 'Suatu tempat'}
 
 TUGAS ANDA:
-Perkaya adegan di atas dengan parameter sinematik yang sangat detail.
-PENTING: JANGAN mengubah jalan cerita, subjek, atau inti adegannya! Cukup buat visualnya lebih kaya, sinematik, dan tajam.
-KHUSUS DIALOG: Buatlah kalimat dialog pendek dalam **bahasa Indonesia yang natural, mengalir, santai, dan relevan dengan adegan di atas** (seperti percakapan sehari-hari orang Indonesia).
+1. Perkaya adegan di atas dengan parameter sinematik yang sangat detail. JANGAN mengubah plot.
+2. Buatlah kalimat dialog pendek dalam **bahasa Indonesia yang natural, mengalir, dan santai**.
+3. Rancang **Audio & SFX Prompt** (dalam bahasa Inggris, singkat padat) untuk mendeskripsikan suara latar adegan ini (contoh: "heavy rain, distant thunder, low bass rumble").
 
 Kembalikan HANYA JSON Valid Murni tanpa markdown:
 {
-  "subject": "Deskripsi subjek mendetail (fisik, pakaian)",
-  "action": "Aksi spesifik yang sedang dilakukan (PERTahankan aksi asli)",
-  "setting": "Setting tempat yang sangat visual (PERTahankan tempat asli)",
-  "lighting": "Pencahayaan sinematik dramatis",
-  "mood": "Emosi/atmosfer lewat fisik",
-  "cameraMotion": "Pergerakan dan sudut kamera sinematik",
-  "dialogue": "Dialog bahasa Indonesia yang natural"
+  "subject": "Deskripsi subjek mendetail",
+  "action": "Aksi spesifik",
+  "setting": "Setting tempat visual",
+  "lighting": "Pencahayaan dramatis",
+  "mood": "Atmosfer lewat fisik",
+  "cameraMotion": "Pergerakan dan sudut kamera",
+  "dialogue": "Dialog bahasa Indonesia natural",
+  "audioPrompt": "Sound design / SFX prompt (English)"
 }`;
 
       const res = await fetch(apiUrl, {
@@ -336,10 +381,11 @@ Kembalikan HANYA JSON Valid Murni tanpa markdown:
           mood: result.mood || prev.mood,
           cameraMotion: result.cameraMotion || prev.cameraMotion,
           dialogue: result.dialogue || prev.dialogue,
+          audioPrompt: result.audioPrompt || prev.audioPrompt, // Set Audio
           lazyOneLiner: `${result.subject} ${result.action} di ${result.setting}`
         }));
         
-        addToast('Sutradara AI telah merancang angle & dialog natural!');
+        addToast('Sutradara AI telah merancang Audio, Angle & Dialog!');
       } else throw new Error("No response");
     } catch (err) {
       console.error(err);
@@ -383,6 +429,7 @@ Kembalikan HANYA JSON Valid Murni tanpa markdown:
 
   const handleGeneratePrompt = async () => {
     setIsGeneratingPrompt(true);
+    setGeneratedPromptResult(null); // Clear previous
     try {
       let tagsSummary = '';
       if (promptLevel === 5) {
@@ -392,38 +439,31 @@ Kembalikan HANYA JSON Valid Murni tanpa markdown:
         });
       }
 
-      // Menyusun Anti-Glitch Negative Prompt
       let glitchProtection = "";
       if (antiGlitch.hands) glitchProtection += "mutated hands, extra fingers, deformed limbs, poorly drawn hands, ";
       if (antiGlitch.slowmo) glitchProtection += "slow motion, slomo, time warp, ";
       if (antiGlitch.text) glitchProtection += "text, watermark, logo, typography, subtitles";
 
-      const systemPrompt = `Anda adalah Prompt Engineer Pakar AI Video (menguasai 5 Levels of AI Video Prompting oleh Youri van Hofwegen). 
+      const systemPrompt = `Anda adalah Prompt Engineer Pakar AI Video. 
 Pengguna meminta prompt video untuk LEVEL ${promptLevel}.
 Aturan:
 - Level 1: Hanya 1 kalimat instan dari 'lazyOneLiner'.
-- Level 2: Deskripsikan Subject, Action, Setting, Lighting, Mood (TANPA menggunakan kata 'tense', tunjukkan lewat fisik).
+- Level 2: Deskripsikan Subject, Action, Setting, Lighting, Mood.
 - Level 3: Tambahkan instruksi spesifik Camera Motion ke dalam deskripsi. Sesuaikan orientasi kamera dengan Aspect Ratio: ${aspectRatio}.
 - Level 4: Buat ini terasa seperti bagian dari urutan film, gunakan "HARD CUT" jika ada instruksi transisi.
 - Level 5: Masukkan parameter sebelumnya, dan WAJIB ganti penyebutan subjek/objek dengan @tags yang diberikan. Di akhir prompt, beri instruksi tegas bahwa @tags tidak boleh berubah wujudnya.
-- Jika ada Dialog ("${builderShot.dialogue}"), masukkan instruksi suara/sinkronisasi dialog secara natural.
+- Jika ada Dialog, masukkan instruksi sinkronisasi dialog.
 
-Selalu kembalikan JSON Murni tanpa markdown: { "positivePrompt": "...", "negativePrompt": "..." }`;
+Selalu kembalikan JSON Murni: { "positivePrompt": "...", "negativePrompt": "..." }`;
 
       const userPrompt = `
 DATA INPUT:
-Rasio Layar (PENTING): ${aspectRatio}
-Level 1 (Lazy One Liner): ${builderShot.lazyOneLiner}
-Level 2 (Subject): ${builderShot.subject}
-Level 2 (Action): ${builderShot.action}
-Level 2 (Setting): ${builderShot.setting}
-Level 2 (Lighting): ${builderShot.lighting}
-Level 2 (Mood): ${builderShot.mood}
-Level 3 (Camera Motion): ${builderShot.cameraMotion}
-Level 4 (Continuity/Transition): ${builderShot.continuity}
-Dialog Karakter (Natural Indonesia): ${builderShot.dialogue}
-Level 5 (Aset @tags yg dipakai): ${tagsSummary || 'Tidak ada'}
-Negative Prompt Wajib: ${glitchProtection}
+Rasio Layar: ${aspectRatio}
+Level 1: ${builderShot.lazyOneLiner}
+Level 2-4 (Subjek, Aksi, Setting, Motion, Mood, Kontinuitas): ${builderShot.subject}, ${builderShot.action}, ${builderShot.setting}, ${builderShot.cameraMotion}, ${builderShot.mood}, ${builderShot.continuity}
+Dialog: ${builderShot.dialogue}
+Level 5 (@tags): ${tagsSummary || 'Tidak ada'}
+Negative Wajib: ${glitchProtection}
 `;
 
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -443,9 +483,10 @@ Negative Prompt Wajib: ${glitchProtection}
       if (rawJson) {
         let cleanJson = rawJson.replace(/```json/gi, '').replace(/```/g, '').trim();
         let finalResult = JSON.parse(cleanJson);
-        // Pastikan glitch protection masuk ke output akhir
         if (!finalResult.negativePrompt) finalResult.negativePrompt = glitchProtection;
         else finalResult.negativePrompt += ", " + glitchProtection;
+        
+        finalResult.audioPrompt = builderShot.audioPrompt; // Append audio
         
         setGeneratedPromptResult(finalResult);
         addToast(`Prompt Level ${promptLevel} berhasil digenerate!`);
@@ -455,6 +496,25 @@ Negative Prompt Wajib: ${glitchProtection}
       addToast('Gagal merangkai prompt. Periksa kuota API Key.', 'error'); 
     } 
     finally { setIsGeneratingPrompt(false); }
+  };
+
+  // FITUR 1: GENERATE VISUAL SKETCH (Menggunakan open API Pollinations AI)
+  const generateVisualSketch = () => {
+      if(!generatedPromptResult) return;
+      const cleanPromptForImage = generatedPromptResult.positivePrompt.replace(/@\w+/g, ''); // Hapus tags agar AI gambar tidak bingung
+      // Pollinations AI tidak butuh API Key, cukup panggil URL dengan prompt
+      const imgUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent("Cinematic storyboard sketch, black and white pencil drawing, " + cleanPromptForImage)}?width=800&height=400&nologo=true`;
+      
+      setGeneratedPromptResult(prev => ({...prev, visualUrl: imgUrl}));
+      addToast('Sketsa Visual sedang digambar, tunggu beberapa saat...');
+  };
+
+  const handleAssetImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => setEditingAsset(prev => ({ ...prev, images: [event.target.result] }));
+    reader.readAsDataURL(file);
   };
 
   const saveAsset = () => {
@@ -468,6 +528,28 @@ Negative Prompt Wajib: ${glitchProtection}
     addToast('Aset @tag berhasil disimpan');
   };
 
+  // FITUR 4: TIMELINE DRAG & DROP
+  const handleDragStart = (e, index) => {
+      setDraggedItemIdx(index);
+      e.dataTransfer.effectAllowed = "move";
+  };
+  const handleDragOver = (e, index) => {
+      e.preventDefault(); // Mengizinkan drop
+  };
+  const handleDrop = (e, index) => {
+      e.preventDefault();
+      if(draggedItemIdx === null || draggedItemIdx === index) return;
+      
+      const newHistory = [...promptHistory];
+      const draggedItem = newHistory[draggedItemIdx];
+      newHistory.splice(draggedItemIdx, 1); // Hapus dari posisi lama
+      newHistory.splice(index, 0, draggedItem); // Sisipkan ke posisi baru
+      
+      setPromptHistory(newHistory);
+      setDraggedItemIdx(null);
+      addToast('Timeline berhasil diubah urutannya');
+  };
+
   const handleResetData = () => {
     if (confirm("Yakin ingin mereset seluruh data aplikasi ini?")) {
       setAssets([]);
@@ -477,10 +559,29 @@ Negative Prompt Wajib: ${glitchProtection}
     }
   };
 
+  // FITUR 5: PRINT PDF
+  const handlePrintPDF = () => {
+      window.print();
+  };
+
   return (
     <div className="h-full min-h-screen flex flex-col md:flex-row font-sans bg-zinc-950 text-zinc-100 selection:bg-amber-500/30">
       
-      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+      {/* CSS untuk menyembunyikan elemen tidak penting saat Print PDF */}
+      <style>{`
+        @media print {
+            body { background: white; color: black; }
+            .print-hidden { display: none !important; }
+            .print-block { display: block !important; }
+            .print-grid { display: grid !important; }
+            .print-break-inside-avoid { break-inside: avoid; }
+            .print-border { border: 1px solid #ddd; }
+            .print-text-black { color: black !important; }
+        }
+      `}</style>
+
+      {/* TOASTS */}
+      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none print-hidden">
         {toasts.map(t => (
           <div key={t.id} className={`pointer-events-auto flex items-center gap-2 px-4 py-3 rounded-lg shadow-xl text-sm font-medium border ${t.type === 'error' ? 'bg-red-950 border-red-800 text-red-200' : 'bg-emerald-950 border-emerald-800 text-emerald-200'} animate-fadeIn`}>
             <Icons.Check /> <span>{t.message}</span>
@@ -488,7 +589,7 @@ Negative Prompt Wajib: ${glitchProtection}
         ))}
       </div>
 
-      <aside className="w-full md:w-64 bg-zinc-900 border-r border-zinc-800 flex flex-col justify-between p-4 shrink-0 overflow-y-auto">
+      <aside className="w-full md:w-64 bg-zinc-900 border-r border-zinc-800 flex flex-col justify-between p-4 shrink-0 overflow-y-auto print-hidden">
         <div>
           <div className="flex items-center gap-3 px-2 py-4 mb-6 border-b border-zinc-800">
             <div className="p-2 bg-gradient-to-tr from-amber-500 to-teal-400 text-zinc-950 rounded-lg">
@@ -506,7 +607,7 @@ Negative Prompt Wajib: ${glitchProtection}
               { id: 'script', label: 'Naskah (Breakdown)', icon: Icons.FileText },
               { id: 'assets', label: 'Saved @tags', icon: Icons.FolderGit2 },
               { id: 'builder', label: 'Scene Builder', icon: Icons.Video },
-              { id: 'history', label: 'Riwayat Prompts', icon: Icons.History },
+              { id: 'history', label: 'Timeline & History', icon: Icons.History },
             ].map(item => (
               <button
                 key={item.id}
@@ -527,7 +628,43 @@ Negative Prompt Wajib: ${glitchProtection}
         </div>
       </aside>
 
-      <main className="flex-1 p-6 md:p-8 overflow-y-auto w-full relative">
+      {/* Tampilan Cetak Khusus (PDF Export) */}
+      <div className="hidden print-block absolute top-0 left-0 w-full p-8 bg-white text-black min-h-screen z-50">
+          <div className="border-b-2 border-black pb-4 mb-6 flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-black uppercase">Storyboard Production</h1>
+                <p className="text-sm text-gray-600">Generated by Storyboard Studio AI</p>
+              </div>
+              <div className="text-right text-xs">
+                  Total Shots: {promptHistory.length}<br/>
+                  Date: {new Date().toLocaleDateString()}
+              </div>
+          </div>
+          <div className="grid grid-cols-2 gap-6">
+              {promptHistory.map((hist, idx) => (
+                  <div key={hist.id} className="print-border p-4 rounded print-break-inside-avoid shadow-sm mb-4">
+                      <div className="flex justify-between font-bold border-b border-gray-300 pb-2 mb-2 text-sm uppercase">
+                          <span>Shot {promptHistory.length - idx}</span>
+                          <span>Lvl {hist.level}</span>
+                      </div>
+                      
+                      {/* Sketsa Visual jika ada */}
+                      {hist.visualUrl && (
+                          <div className="mb-3 w-full h-40 bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-300">
+                              <img src={hist.visualUrl} alt="Sketsa" className="w-full object-cover" />
+                          </div>
+                      )}
+
+                      <div className="text-xs space-y-2 text-gray-800 font-mono">
+                          <p><strong>Prompt:</strong> {hist.positivePrompt}</p>
+                          {hist.audioPrompt && <p><strong>Audio/SFX:</strong> {hist.audioPrompt}</p>}
+                      </div>
+                  </div>
+              ))}
+          </div>
+      </div>
+
+      <main className="flex-1 p-6 md:p-8 overflow-y-auto w-full relative print-hidden">
         <div className="max-w-6xl mx-auto space-y-8">
           
           {activeTab === 'dashboard' && (
@@ -582,7 +719,6 @@ Negative Prompt Wajib: ${glitchProtection}
               <h2 className="text-2xl font-bold">Breakdown Naskah Cerita & PDF</h2>
               <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
                 
-                {/* Textarea dengan Fitur Voice Input */}
                 <div className="relative">
                     <textarea
                     value={scriptInput} onChange={e => setScriptInput(e.target.value)}
@@ -707,7 +843,6 @@ Negative Prompt Wajib: ${glitchProtection}
                           <div className="text-sm text-zinc-300 flex-1 space-y-1">
                             <div className="flex items-center gap-2">
                                 <strong className="text-teal-400">Shot {idx+1}:</strong> 
-                                {/* Badge Estimasi Durasi AI */}
                                 {shot.estimatedDuration && <span className="bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded text-[10px] flex items-center border border-zinc-700"><Icons.Clock />{shot.estimatedDuration}</span>}
                             </div>
                             <div>{shot.action}</div>
@@ -759,15 +894,37 @@ Negative Prompt Wajib: ${glitchProtection}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <h2 className="text-2xl font-bold">Scene Builder</h2>
                 
-                {/* Tombol Sutradara AI (Terkunci Konteks) */}
-                <button 
-                  onClick={handleAiCinematicDirector} 
-                  disabled={isAiCinematicLoading}
-                  className="bg-gradient-to-r from-teal-500 to-sky-500 hover:opacity-90 text-zinc-950 font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg disabled:opacity-50 transition-all"
-                >
-                  <Icons.Sparkles /> {isAiCinematicLoading ? 'Sutradara AI Merancang...' : '✨ Sutradara AI (Auto Cinematic & Dialog ID)'}
-                </button>
+                <div className="flex gap-2">
+                    {/* Tombol Cek Kontinuitas */}
+                    <button 
+                        onClick={handleCheckContinuity} 
+                        disabled={isCheckingContinuity || promptHistory.length === 0}
+                        className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 disabled:opacity-50 transition-all border border-zinc-700"
+                    >
+                        <Icons.AlertTriangle /> {isCheckingContinuity ? 'Mengecek...' : 'Cek Kontinuitas'}
+                    </button>
+
+                    {/* Tombol Sutradara AI */}
+                    <button 
+                    onClick={handleAiCinematicDirector} 
+                    disabled={isAiCinematicLoading}
+                    className="bg-gradient-to-r from-teal-500 to-sky-500 hover:opacity-90 text-zinc-950 font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg disabled:opacity-50 transition-all"
+                    >
+                    <Icons.Sparkles /> {isAiCinematicLoading ? 'Merancang...' : '✨ Sutradara AI'}
+                    </button>
+                </div>
               </div>
+
+              {/* Warning Banner Kontinuitas */}
+              {continuityWarning && (
+                  <div className="bg-yellow-950/50 border border-yellow-700/50 text-yellow-300 p-4 rounded-xl flex items-start gap-3 animate-fadeIn">
+                      <Icons.AlertTriangle />
+                      <div>
+                          <strong className="block text-sm">Peringatan Kesinambungan (Continuity Warning)</strong>
+                          <span className="text-xs">{continuityWarning}</span>
+                      </div>
+                  </div>
+              )}
               
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
@@ -828,11 +985,16 @@ Negative Prompt Wajib: ${glitchProtection}
                       </div>
                     )}
 
-                    <div className="pt-3 border-t border-zinc-800">
-                      <label className="text-[10px] font-bold text-teal-400 uppercase flex items-center justify-between">
-                        <span>Dialog Karakter (Natural Indonesia)</span>
-                      </label>
-                      <input type="text" value={builderShot.dialogue} onChange={e=>setBuilderShot({...builderShot, dialogue: e.target.value})} className="w-full bg-teal-950/20 border border-teal-900/50 rounded-lg p-2.5 text-sm mt-1 text-teal-200" placeholder="Contoh: 'Eh, sebentar lagi sampai kok, santai aja.'" />
+                    <div className="pt-3 border-t border-zinc-800 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-[10px] font-bold text-teal-400 uppercase flex items-center gap-1">Dialog Karakter</label>
+                            <input type="text" value={builderShot.dialogue} onChange={e=>setBuilderShot({...builderShot, dialogue: e.target.value})} className="w-full bg-teal-950/20 border border-teal-900/50 rounded-lg p-2.5 text-sm mt-1 text-teal-200" placeholder="'Santai aja...'" />
+                        </div>
+                        {/* Audio Prompt Field */}
+                        <div>
+                            <label className="text-[10px] font-bold text-purple-400 uppercase flex items-center gap-1"><Icons.Music /> Audio & SFX Prompt</label>
+                            <input type="text" value={builderShot.audioPrompt} onChange={e=>setBuilderShot({...builderShot, audioPrompt: e.target.value})} className="w-full bg-purple-950/20 border border-purple-900/50 rounded-lg p-2.5 text-sm mt-1 text-purple-200" placeholder="heavy rain, footsteps" />
+                        </div>
                     </div>
 
                     {promptLevel >= 4 && (
@@ -860,7 +1022,6 @@ Negative Prompt Wajib: ${glitchProtection}
 
                   </div>
 
-                  {/* Pengaturan Aspect Ratio & Anti Glitch */}
                   <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
                      <div>
                         <label className="text-[10px] font-bold text-zinc-400 uppercase block mb-2">📱 Aspect Ratio (Rasio Layar)</label>
@@ -873,7 +1034,7 @@ Negative Prompt Wajib: ${glitchProtection}
                         </div>
                      </div>
                      <div className="pt-3 border-t border-zinc-800">
-                        <label className="text-[10px] font-bold text-zinc-400 uppercase block mb-2">🛡️ Anti-Glitch Matrix (Auto-Negative Prompt)</label>
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase block mb-2">🛡️ Anti-Glitch Matrix (Auto-Negative)</label>
                         <div className="flex flex-wrap gap-4 text-xs text-zinc-300">
                             <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={antiGlitch.hands} onChange={(e) => setAntiGlitch({...antiGlitch, hands: e.target.checked})} className="rounded bg-zinc-800 border-zinc-700 text-amber-500" /> Cegah Jari Rusak</label>
                             <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={antiGlitch.slowmo} onChange={(e) => setAntiGlitch({...antiGlitch, slowmo: e.target.checked})} className="rounded bg-zinc-800 border-zinc-700 text-amber-500" /> Tolak Slow-Motion</label>
@@ -889,12 +1050,27 @@ Negative Prompt Wajib: ${glitchProtection}
 
                 <div className="lg:col-span-5">
                   <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 sticky top-8">
-                    <h3 className="font-bold text-sm border-b border-zinc-800 pb-3 mb-4 text-amber-400 flex items-center gap-2"><Icons.Film /> Hasil Prompt Video AI</h3>
+                    <h3 className="font-bold text-sm border-b border-zinc-800 pb-3 mb-4 text-amber-400 flex items-center justify-between">
+                        <div className="flex items-center gap-2"><Icons.Film /> Hasil Prompt AI</div>
+                        {generatedPromptResult && !generatedPromptResult.visualUrl && (
+                            <button onClick={generateVisualSketch} className="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-1 rounded border border-amber-500/30 hover:bg-amber-500/30">
+                                🎨 Visual Sketsa
+                            </button>
+                        )}
+                    </h3>
                     
                     {!generatedPromptResult ? (
                       <div className="text-center py-12 text-zinc-600 text-xs italic">Isi form atau klik Sutradara AI di atas lalu klik Generate.</div>
                     ) : (
                       <div className="space-y-4 animate-fadeIn">
+                        
+                        {/* Tampilan Visual Storyboard */}
+                        {generatedPromptResult.visualUrl && (
+                            <div className="w-full h-40 bg-zinc-950 rounded-xl overflow-hidden border border-zinc-800">
+                                <img src={generatedPromptResult.visualUrl} alt="Visual Storyboard" className="w-full h-full object-cover" />
+                            </div>
+                        )}
+
                         <div>
                           <div className="flex justify-between items-center mb-1">
                             <span className="text-[10px] font-bold text-emerald-400 uppercase">Positive Prompt</span>
@@ -913,12 +1089,26 @@ Negative Prompt Wajib: ${glitchProtection}
                             {generatedPromptResult.negativePrompt || 'None'}
                           </div>
                         </div>
+                        
+                        {/* Audio SFX Prompt display */}
+                        {generatedPromptResult.audioPrompt && (
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-[10px] font-bold text-purple-400 uppercase">Audio/SFX Prompt</span>
+                            <button onClick={() => copyToClipboard(generatedPromptResult.audioPrompt)} className="text-zinc-400 hover:text-white"><Icons.Copy /></button>
+                          </div>
+                          <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-400 font-mono leading-relaxed">
+                            {generatedPromptResult.audioPrompt}
+                          </div>
+                        </div>
+                        )}
+
                         <button onClick={() => {
                           const newHist = { id: Date.now().toString(), level: promptLevel, ...generatedPromptResult };
-                          setPromptHistory([newHist, ...promptHistory]);
-                          addToast('Berhasil disimpan ke Riwayat');
+                          setPromptHistory([newHist, ...promptHistory]); // Insert at top
+                          addToast('Berhasil disimpan ke Timeline (History)');
                         }} className="w-full bg-zinc-800 hover:bg-zinc-700 font-bold text-xs py-3 rounded-xl mt-2 transition-colors">
-                          Simpan ke Riwayat
+                          Tambahkan ke Timeline
                         </button>
                       </div>
                     )}
@@ -929,40 +1119,77 @@ Negative Prompt Wajib: ${glitchProtection}
             </div>
           )}
 
-          {activeTab === 'history' && (
-            <div className="animate-fadeIn space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Riwayat Prompt</h2>
+        {/* TAB HISTORY & TIMELINE DRAG DROP */}
+        {activeTab === 'history' && (
+          <div className="animate-fadeIn space-y-6">
+            <div className="flex justify-between items-center bg-zinc-900 border border-zinc-800 p-4 rounded-2xl">
+              <div>
+                  <h2 className="text-2xl font-bold">Timeline Storyboard</h2>
+                  <p className="text-xs text-zinc-400 mt-1">Seret kotak (Drag & Drop) untuk mengatur urutan adegan.</p>
+              </div>
+              <div className="flex gap-2">
                 <button onClick={() => {
-                  const headers = ['Level', 'Positive Prompt', 'Negative Prompt'];
-                  const rows = promptHistory.map(p => [p.level, `"${p.positivePrompt.replace(/"/g, '""')}"`, `"${p.negativePrompt.replace(/"/g, '""')}"`]);
+                  const headers = ['Level', 'Positive', 'Negative', 'Audio'];
+                  const rows = promptHistory.map(p => [p.level, `"${p.positivePrompt?.replace(/"/g, '""')}"`, `"${p.negativePrompt?.replace(/"/g, '""')}"`, `"${p.audioPrompt?.replace(/"/g, '""')}"`]);
                   const csv = [headers, ...rows].map(e => e.join(",")).join("\n");
                   const blob = new Blob([csv], { type: 'text/csv' });
                   const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a'); a.href = url; a.download = 'prompts.csv'; a.click();
-                }} className="bg-zinc-800 hover:bg-zinc-700 text-xs px-4 py-2 rounded-lg flex gap-2 items-center">
-                  <Icons.Download /> Ekspor CSV
+                  const a = document.createElement('a'); a.href = url; a.download = 'timeline.csv'; a.click();
+                }} className="bg-zinc-800 hover:bg-zinc-700 text-xs px-4 py-2 rounded-lg flex gap-2 items-center font-bold">
+                  <Icons.Download /> CSV
+                </button>
+                <button onClick={handlePrintPDF} className="bg-amber-500 hover:bg-amber-600 text-zinc-950 text-xs px-4 py-2 rounded-lg flex gap-2 items-center font-bold shadow-lg shadow-amber-500/20">
+                  <Icons.Printer /> Cetak PDF
                 </button>
               </div>
-              <div className="space-y-4">
-                {promptHistory.length === 0 ? <p className="text-sm text-zinc-500">Belum ada prompt tersimpan.</p> : promptHistory.map(hist => (
-                  <div key={hist.id} className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl flex flex-col gap-3">
-                    <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
-                      <span className="text-[10px] text-amber-400 font-bold px-2 py-1 bg-amber-500/10 rounded">LEVEL {hist.level}</span>
-                      <button onClick={() => copyToClipboard(hist.positivePrompt)} className="text-xs bg-zinc-800 hover:bg-zinc-700 px-3 py-1 rounded">Copy Prompt</button>
-                    </div>
-                    <p className="text-xs font-mono text-zinc-300 whitespace-pre-wrap">{hist.positivePrompt}</p>
-                  </div>
-                ))}
-              </div>
             </div>
-          )}
+            
+            <div className="space-y-4">
+              {promptHistory.length === 0 ? <p className="text-sm text-zinc-500 text-center py-10">Timeline masih kosong. Mulai buat di Scene Builder.</p> : promptHistory.map((hist, index) => (
+                <div 
+                    key={hist.id} 
+                    draggable 
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDrop={(e) => handleDrop(e, index)}
+                    className={`bg-zinc-900 border ${draggedItemIdx === index ? 'border-amber-500 opacity-50' : 'border-zinc-800'} p-5 rounded-2xl flex flex-col md:flex-row gap-5 transition-all`}
+                >
+                  {/* Grip untuk Drag */}
+                  <div className="flex items-center justify-center shrink-0 hidden md:flex cursor-grab">
+                      <Icons.Grip />
+                  </div>
+
+                  {/* Thumbnail / Sketsa */}
+                  <div className="w-full md:w-48 h-28 bg-zinc-950 rounded-xl overflow-hidden shrink-0 border border-zinc-800 flex items-center justify-center">
+                      {hist.visualUrl ? <img src={hist.visualUrl} alt="Sketch" className="w-full h-full object-cover pointer-events-none" /> : <Icons.Image />}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-center border-b border-zinc-800 pb-2 mb-3">
+                        <span className="text-[10px] text-amber-400 font-bold px-2 py-1 bg-amber-500/10 rounded">SHOT {promptHistory.length - index} (Lvl {hist.level})</span>
+                        <div className="flex gap-2">
+                            <button onClick={() => copyToClipboard(hist.positivePrompt)} className="text-xs bg-zinc-800 hover:bg-zinc-700 px-3 py-1 rounded">Copy Prompt</button>
+                            <button onClick={() => setPromptHistory(promptHistory.filter((_, i) => i !== index))} className="text-xs bg-red-950/50 text-red-400 hover:bg-red-900/50 px-2 py-1 rounded"><Icons.Trash /></button>
+                        </div>
+                      </div>
+                      <p className="text-xs font-mono text-zinc-300 line-clamp-3 mb-2">{hist.positivePrompt}</p>
+                      
+                      {hist.audioPrompt && (
+                         <p className="text-[10px] font-mono text-purple-300 flex gap-1 items-center bg-purple-950/30 p-1.5 rounded"><Icons.Music /> {hist.audioPrompt}</p>
+                      )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         </div>
       </main>
 
+      {/* MODAL ASSET / TAGS */}
       {isAssetModalOpen && editingAsset && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 print-hidden">
           <div className="bg-zinc-900 border border-zinc-800 w-full max-w-xl rounded-2xl overflow-hidden flex flex-col shadow-2xl">
             <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
               <h3 className="font-bold text-amber-400">{editingAsset.id ? 'Edit @tag' : 'Buat @tag Baru'}</h3>
