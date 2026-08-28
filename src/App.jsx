@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Camera, Film, Save, Trash2, FileText, Settings, Image as ImageIcon, BookOpen, Download, AlertTriangle, FileUp } from 'lucide-react';
 
 export default function App() {
@@ -24,6 +24,7 @@ export default function App() {
   });
   const [generatedPrompt, setGeneratedPrompt] = useState('');
 
+  // Auto-Save
   useEffect(() => { localStorage.setItem('geminiApiKey', apiKey); }, [apiKey]);
   useEffect(() => { localStorage.setItem('savedScript', scriptInput); }, [scriptInput]);
   useEffect(() => { localStorage.setItem('detectedElements', JSON.stringify(detectedElements)); }, [detectedElements]);
@@ -31,6 +32,7 @@ export default function App() {
   useEffect(() => { localStorage.setItem('sceneHistory', JSON.stringify(scenes)); }, [scenes]);
   useEffect(() => { localStorage.setItem('directorsPlaybook', playbook); }, [playbook]);
 
+  // --- HELPER: GEMINI API CALL ---
   const callGemini = async (systemInstruction, userPrompt, imageObj = null) => {
     if (!apiKey) {
       alert("Masukkan API Key Gemini di menu Pengaturan!");
@@ -40,6 +42,7 @@ export default function App() {
     
     let parts = [{ text: `${systemInstruction}\n\n${userPrompt}` }];
     
+    // Inject Image if exists
     if (imageObj) {
       parts.push({
         inline_data: {
@@ -68,6 +71,7 @@ export default function App() {
     }
   };
 
+  // --- FITUR 1: NASKAH BREAKDOWN ---
   const handleAnalyzeScript = async () => {
     setIsLoading(true);
     const prompt = `Analisis naskah ini. Ekstrak menjadi JSON dengan format:
@@ -99,6 +103,7 @@ export default function App() {
     setIsLoading(false);
   };
 
+  // --- FITUR 2: SUTRADARA AI ---
   const handleDirectorAI = async () => {
     setIsLoading(true);
     let instruction = `Kamu adalah Sutradara AI Profesional. Lengkapi parameter shot untuk adegan ini HANYA dengan JSON: {"shotType":"", "angle":"", "movement":"", "lens":"", "dialogue":"", "audio":""}. \nBeri dialog bahasa Indonesia natural jika ada subjek manusia. Racik SFX audio yang pas.`;
@@ -125,6 +130,7 @@ export default function App() {
     setIsLoading(false);
   };
 
+  // Handle Image Upload untuk Starting Frame
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -141,6 +147,7 @@ export default function App() {
     }
   };
 
+  // --- FITUR 3: GENERATOR PROMPT ASET ---
   const handleGenerateAssetPrompt = (type, name) => {
     let prompt = "";
     if (type === "character") {
@@ -152,6 +159,7 @@ export default function App() {
     alert(prompt);
   };
 
+  // --- FITUR 4: EKSPOR & IMPOR JSON (BACKUP) ---
   const handleExportBackup = () => {
     const data = { scriptInput, detectedElements, tags, scenes, playbook };
     const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
@@ -186,6 +194,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-200 font-sans flex">
+      {/* SIDEBAR NAVIGATION */}
       <aside className="w-64 bg-gray-900 border-r border-gray-800 p-4 flex flex-col gap-2">
         <h1 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
           <Film className="text-blue-500" /> Storyboard AI
@@ -208,9 +217,10 @@ export default function App() {
         ))}
       </aside>
 
+      {/* MAIN CONTENT */}
       <main className="flex-1 p-8 overflow-y-auto h-screen">
         
-        {}
+        {/* TAB: BREAKDOWN */}
         {activeTab === 'breakdown' && (
           <div className="max-w-4xl space-y-6">
             <h2 className="text-2xl font-bold text-white border-b border-gray-800 pb-2">Breakdown Naskah</h2>
@@ -223,6 +233,7 @@ export default function App() {
               {isLoading ? 'Menganalisis...' : 'Mulai Breakdown AI'}
             </button>
 
+            {/* HASIL DETEKSI */}
             {detectedElements.characters.length > 0 && (
               <div className="bg-gray-900 p-6 rounded-xl border border-gray-800 grid grid-cols-3 gap-4">
                 <div>
@@ -240,6 +251,7 @@ export default function App() {
               </div>
             )}
 
+            {/* HASIL SHOT */}
             <div className="space-y-4">
               {breakdownResults.map((shot, idx) => (
                 <div key={idx} className="bg-gray-900 p-4 rounded-xl border border-gray-800 flex justify-between items-center">
@@ -258,7 +270,7 @@ export default function App() {
           </div>
         )}
 
-        {}
+        {/* TAB: ASSETS */}
         {activeTab === 'assets' && (
           <div className="max-w-4xl space-y-6">
             <h2 className="text-2xl font-bold text-white border-b border-gray-800 pb-2">Asset Library (@tags)</h2>
@@ -272,7 +284,7 @@ export default function App() {
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => handleGenerateAssetPrompt(tagItem.type, tagItem.tag)} className="text-yellow-500 hover:text-yellow-400" title="Prompt 3-Panel"><ImageIcon size={18}/></button>
-                    <button onClick={() => setTags(tags.filter((tItem, idx) => idx !== i))} className="text-red-500 hover:text-red-400"><Trash2 size={18}/></button>
+                    <button onClick={() => setTags(tags.filter((item) => item.tag !== tagItem.tag))} className="text-red-500 hover:text-red-400"><Trash2 size={18}/></button>
                   </div>
                 </div>
               ))}
@@ -280,7 +292,7 @@ export default function App() {
           </div>
         )}
 
-        {}
+        {/* TAB: SCENE BUILDER */}
         {activeTab === 'builder' && (
           <div className="max-w-5xl space-y-6">
             <div className="flex justify-between items-center border-b border-gray-800 pb-2">
@@ -295,7 +307,10 @@ export default function App() {
             </div>
 
             <div className="grid grid-cols-2 gap-8">
+              {/* KOLOM KIRI: INPUT */}
               <div className="space-y-4">
+                
+                {/* STARTING FRAME UPLOAD */}
                 <div className="bg-gray-900 p-4 rounded-xl border border-dashed border-gray-700">
                   <h4 className="text-sm font-bold text-gray-300 mb-2 flex items-center gap-2"><ImageIcon size={16}/> Starting Frame (Opsional)</h4>
                   <p className="text-xs text-gray-500 mb-3">Upload sketsa/referensi frame awal agar AI Sutradara bisa menganalisis komposisinya.</p>
@@ -330,9 +345,11 @@ export default function App() {
                 </div>
               </div>
 
+              {/* KOLOM KANAN: OUTPUT */}
               <div className="bg-gray-900 p-6 rounded-xl border border-gray-800 flex flex-col">
                 <h3 className="font-bold text-white mb-4">Hasil Prompt</h3>
                 
+                {/* Generate Logic Standar Youri */}
                 <button onClick={() => {
                   let res = "";
                   if (formState.level === "1") res = `${formState.subject} ${formState.action} in ${formState.setting}, ${formState.aspect}`;
@@ -358,7 +375,7 @@ export default function App() {
           </div>
         )}
 
-        {}
+        {/* TAB: TIMELINE & HISTORY */}
         {activeTab === 'history' && (
           <div className="max-w-4xl space-y-6">
             <h2 className="text-2xl font-bold text-white border-b border-gray-800 pb-2">Timeline Produksi</h2>
@@ -376,16 +393,18 @@ export default function App() {
           </div>
         )}
 
-        {}
+        {/* TAB: SETTINGS & PLAYBOOK */}
         {activeTab === 'settings' && (
           <div className="max-w-3xl space-y-8">
             <h2 className="text-2xl font-bold text-white border-b border-gray-800 pb-2">Pengaturan Sistem</h2>
             
+            {/* API KEY */}
             <div className="bg-gray-900 p-6 rounded-xl border border-gray-800">
               <h3 className="font-bold mb-2">Google Gemini API Key</h3>
               <input type="password" value={apiKey} onChange={e=>setApiKey(e.target.value)} placeholder="AIzaSy..." className="w-full bg-black border border-gray-700 p-3 rounded text-white" />
             </div>
 
+            {/* BUKU PANDUAN SUTRADARA (Director's Playbook) */}
             <div className="bg-gray-900 p-6 rounded-xl border border-indigo-900/50 shadow-[0_0_15px_rgba(79,70,229,0.1)]">
               <h3 className="font-bold text-indigo-400 mb-2 flex items-center gap-2"><BookOpen size={18}/> Buku Panduan Sutradara (Playbook)</h3>
               <p className="text-sm text-gray-400 mb-4">Tulis/Paste gaya kamera, rumus angle, atau ilmu sinematografi dari website favorit Anda. AI Sutradara akan membaca buku ini sebelum memberi saran di Scene Builder!</p>
@@ -396,6 +415,7 @@ export default function App() {
               />
             </div>
 
+            {/* BACKUP & RESTORE */}
             <div className="bg-gray-900 p-6 rounded-xl border border-gray-800">
               <h3 className="font-bold text-white mb-4">Backup & Restore Proyek (.json)</h3>
               <div className="flex gap-4">
@@ -407,6 +427,7 @@ export default function App() {
               </div>
             </div>
 
+            {/* DANGER ZONE */}
             <div className="bg-red-950/30 p-6 rounded-xl border border-red-900/50 mt-8">
               <h3 className="font-bold text-red-400 mb-2 flex items-center gap-2"><AlertTriangle size={18}/> Danger Zone</h3>
               <button onClick={() => {
@@ -418,7 +439,7 @@ export default function App() {
           </div>
         )}
 
-        {}
+        {/* TAB: GUIDE (Youri's 5 Levels) */}
         {activeTab === 'guide' && (
           <div className="max-w-4xl space-y-6">
             <h2 className="text-2xl font-bold text-white border-b border-gray-800 pb-2">Panduan 5 Level AI Prompting (Youri van Hofwegen)</h2>
