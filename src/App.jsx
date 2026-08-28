@@ -75,7 +75,7 @@ export default function App() {
   const [scenes, setScenes] = useState([]);
   const [promptHistory, setPromptHistory] = useState([]);
 
-  // Script Analyzer (Dengan LocalStorage Backup)
+  // Script Analyzer
   const [scriptInput, setScriptInput] = useState(() => localStorage.getItem('sb_scriptInput') || '');
   const [pdfFile, setPdfFile] = useState(null);
   const [pdfName, setPdfName] = useState('');
@@ -90,7 +90,7 @@ export default function App() {
   const [isAutoDescribing, setIsAutoDescribing] = useState(false);
   const [editingAsset, setEditingAsset] = useState(null);
 
-  // Scene Builder (Sesuai Aturan Youri)
+  // Scene Builder
   const [promptLevel, setPromptLevel] = useState(5);
   const [sceneDuration, setSceneDuration] = useState(10);
   const [builderShot, setBuilderShot] = useState({
@@ -402,12 +402,13 @@ Hasilkan JSON Murni: { "positivePrompt": "...", "negativePrompt": "..." }`;
     setPromptHistory(newHist);
   };
   
+  // FITUR BACKUP & RESTORE PROJECT (JSON)
   const handleExportProject = () => {
     const projectData = { assets, scenes, promptHistory, scriptInput, detectedElements };
     const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'Storyboard_Backup.json'; a.click();
-    addToast('Proyek berhasil di-backup');
+    const a = document.createElement('a'); a.href = url; a.download = `Storyboard_Backup_${new Date().toISOString().slice(0,10)}.json`; a.click();
+    addToast('Proyek berhasil di-backup (.json)');
   };
 
   const handleImportProject = (e) => {
@@ -422,8 +423,8 @@ Hasilkan JSON Murni: { "positivePrompt": "...", "negativePrompt": "..." }`;
         if (data.promptHistory) setPromptHistory(data.promptHistory);
         if (data.scriptInput) setScriptInput(data.scriptInput);
         if (data.detectedElements) setDetectedElements(data.detectedElements);
-        addToast('Proyek berhasil di-restore');
-      } catch (err) { addToast('File backup rusak', 'error'); }
+        addToast('Proyek berhasil di-restore!');
+      } catch (err) { addToast('File backup rusak/invalid', 'error'); }
     };
     reader.readAsText(file);
   };
@@ -467,15 +468,6 @@ Hasilkan JSON Murni: { "positivePrompt": "...", "negativePrompt": "..." }`;
               </button>
             ))}
           </nav>
-        </div>
-        
-        <div className="pt-4 border-t border-zinc-800 mt-4 space-y-2">
-          <label className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs py-2 px-3 rounded-lg flex items-center justify-center gap-2 cursor-pointer transition-colors">
-            <Icons.Download /> Impor Proyek <input type="file" accept=".json" className="hidden" onChange={handleImportProject} />
-          </label>
-          <button onClick={handleExportProject} className="w-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 text-xs py-2 px-3 rounded-lg flex items-center justify-center gap-2 transition-colors">
-            <Icons.Save /> Backup Proyek
-          </button>
         </div>
       </aside>
 
@@ -718,17 +710,42 @@ Hasilkan JSON Murni: { "positivePrompt": "...", "negativePrompt": "..." }`;
           {activeTab === 'settings' && (
             <div className="animate-fadeIn space-y-6 print:hidden">
               <h2 className="text-2xl font-bold">Pengaturan Aplikasi</h2>
-              <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl space-y-6">
+              
+              <div className="bg-zinc-900 border border-zinc-800 p-6 rounded-2xl space-y-8">
+                
+                {/* Fitur Backup & Restore JSON (Prominent) */}
                 <div>
+                  <h3 className="text-emerald-400 font-bold mb-2 flex items-center gap-2">
+                    <Icons.FolderGit2 /> Backup & Restore Proyek
+                  </h3>
+                  <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
+                    Simpan seluruh progres Anda (Naskah, @tags, Scene Breakdown, dan Riwayat Prompt) ke dalam satu file <strong>.json</strong>. 
+                    Anda bisa membawanya ke komputer lain atau membagikannya ke rekan tim Anda.
+                  </p>
+                  <div className="flex flex-wrap gap-4">
+                    <button onClick={handleExportProject} className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs px-5 py-3 rounded-lg font-bold hover:bg-emerald-500/30 flex items-center gap-2 transition-colors">
+                      <Icons.Save /> Ekspor Proyek (.json)
+                    </button>
+                    
+                    <label className="bg-sky-500/20 text-sky-400 border border-sky-500/30 text-xs px-5 py-3 rounded-lg font-bold hover:bg-sky-500/30 flex items-center gap-2 cursor-pointer transition-colors">
+                      <Icons.Download /> Impor Proyek (.json)
+                      <input type="file" accept=".json" className="hidden" onChange={handleImportProject} />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-zinc-800">
                   <h3 className="text-red-400 font-bold mb-2">Hapus Riwayat Prompt</h3>
                   <p className="text-xs text-zinc-400 mb-3">Menghapus daftar riwayat di menu Timeline, tapi Naskah dan @tags Anda tetap aman.</p>
                   <button onClick={() => handleResetData('history')} className="bg-zinc-800 text-xs px-4 py-2 rounded-lg font-bold hover:bg-zinc-700">Kosongkan Riwayat</button>
                 </div>
+                
                 <div className="pt-6 border-t border-zinc-800">
                   <h3 className="text-red-500 font-bold mb-2">Reset Total (Bahaya)</h3>
                   <p className="text-xs text-zinc-400 mb-3">Menghapus seluruh Naskah, @tags, dan Riwayat. Aplikasi akan kembali seperti baru.</p>
                   <button onClick={() => { if(window.confirm('Yakin hapus semua?')) handleResetData('all'); }} className="bg-red-500 text-white text-xs px-4 py-2 rounded-lg font-bold hover:bg-red-600">Reset Semua Data</button>
                 </div>
+
               </div>
             </div>
           )}
