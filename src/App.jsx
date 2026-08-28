@@ -444,6 +444,7 @@ Hasilkan JSON Murni: { "positivePrompt": "...", "negativePrompt": "..." }`;
   return (
     <div className="h-full min-h-screen flex flex-col md:flex-row font-sans bg-zinc-950 text-zinc-100 selection:bg-amber-500/30">
       
+      {/* Toasts */}
       <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
         {toasts.map(t => (
           <div key={t.id} className={`pointer-events-auto flex items-center gap-2 px-4 py-3 rounded-lg shadow-xl text-sm font-medium border ${t.type === 'error' ? 'bg-red-950 border-red-800 text-red-200' : 'bg-emerald-950 border-emerald-800 text-emerald-200'} animate-fadeIn`}>
@@ -452,6 +453,7 @@ Hasilkan JSON Murni: { "positivePrompt": "...", "negativePrompt": "..." }`;
         ))}
       </div>
 
+      {/* Sidebar Navigation */}
       <aside className="w-full md:w-64 bg-zinc-900 border-r border-zinc-800 flex flex-col justify-between p-4 shrink-0 overflow-y-auto print:hidden">
         <div>
           <div className="flex items-center gap-3 px-2 py-4 mb-6 border-b border-zinc-800">
@@ -462,7 +464,15 @@ Hasilkan JSON Murni: { "positivePrompt": "...", "negativePrompt": "..." }`;
             </div>
           </div>
           <nav className="space-y-1">
-            {[ { id: 'dashboard', label: 'Dashboard', icon: Icons.LayoutDashboard }, { id: 'guide', label: '5 Levels Guide', icon: Icons.Layers }, { id: 'script', label: 'Naskah (Breakdown)', icon: Icons.FileText }, { id: 'assets', label: 'Saved @tags', icon: Icons.FolderGit2 }, { id: 'builder', label: 'Scene Builder', icon: Icons.Video }, { id: 'history', label: 'Timeline & History', icon: Icons.History }, { id: 'settings', label: 'Pengaturan', icon: Icons.Settings } ].map(item => (
+            {[ 
+              { id: 'dashboard', label: 'Dashboard', icon: Icons.LayoutDashboard }, 
+              { id: 'guide', label: '5 Levels Guide', icon: Icons.Layers }, 
+              { id: 'script', label: 'Naskah (Breakdown)', icon: Icons.FileText }, 
+              { id: 'assets', label: 'Saved @tags', icon: Icons.FolderGit2 }, 
+              { id: 'builder', label: 'Scene Builder', icon: Icons.Video }, 
+              { id: 'history', label: 'Timeline & History', icon: Icons.History }, 
+              { id: 'settings', label: 'Pengaturan', icon: Icons.Settings } 
+            ].map(item => (
               <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === item.id ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}>
                 <item.icon /> <span>{item.label}</span>
               </button>
@@ -471,10 +481,10 @@ Hasilkan JSON Murni: { "positivePrompt": "...", "negativePrompt": "..." }`;
         </div>
       </aside>
 
+      {/* Main Content Area */}
       <main className="flex-1 p-6 md:p-8 overflow-y-auto w-full relative print:p-0 print:bg-white print:text-black">
         <div className="max-w-6xl mx-auto space-y-8">
           
-          {}
           {activeTab === 'dashboard' && (
             <div className="animate-fadeIn space-y-6 print:hidden">
               <div><h2 className="text-3xl font-bold">Halo, Sutradara!</h2><p className="text-zinc-400 mt-1">Alur kerja standar "5 Levels of AI Video Prompting".</p></div>
@@ -489,7 +499,33 @@ Hasilkan JSON Murni: { "positivePrompt": "...", "negativePrompt": "..." }`;
             </div>
           )}
 
-          {}
+          {activeTab === 'guide' && (
+            <div className="animate-fadeIn space-y-6 print:hidden">
+              <h2 className="text-2xl font-bold">5 Levels of AI Video Prompting</h2>
+              <p className="text-sm text-zinc-400 mb-6">Metode standar industri berdasarkan panduan Youri van Hofwegen untuk mendapatkan kontrol absolut pada AI Video Generator.</p>
+              
+              <div className="space-y-4">
+                {[
+                  { lvl: 1, title: 'The Lazy One-Liner', desc: 'Ide utuh hanya dalam satu kalimat. Hasilnya sangat acak dan video tidak akan konsisten jika digenerate ulang, karena AI mengambil alih kontrol yang tidak Anda tulis.' },
+                  { lvl: 2, title: 'Describe the Shot', desc: 'Tambahkan 5 unsur wajib yang tidak ada di Level 1: Subject, Action, Setting, Lighting, dan Mood. Peringatan: Jangan pernah menulis kata emosi abstrak seperti "tegang" (tense), tetapi deskripsikan lewat bahasa tubuh (misal: "rahang mengeras").' },
+                  { lvl: 3, title: 'Direct the Camera', desc: 'Kendalikan kamera secara spesifik. Tentukan ukuran shot, angle, pergerakan, dan jenis lensa (contoh: "Medium shot on a wide lens, low angle, tracking behind him").' },
+                  { lvl: 4, title: 'Build a Shot List', desc: 'Prompt berubah dari bentuk paragraf menjadi format "Blok Kaku" dengan timestamp [0-4s]. Gunakan instruksi HARD CUT untuk transisi antar shot di dalam satu durasi.' },
+                  { lvl: 5, title: 'Lock the Character (@tags)', desc: 'Gunakan referensi visual karakter (3-Panel Character Sheet) yang dihubungkan dengan sebutan spesifik (seperti @ManCool). Hal ini memastikan wajah, pakaian, dan properti tidak pernah berubah-ubah sepanjang video berjalan.' }
+                ].map(item => (
+                  <div key={item.lvl} className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl flex gap-5 items-start transition hover:bg-zinc-800">
+                    <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center font-black text-xl shrink-0 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+                      {item.lvl}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-zinc-100 text-lg mb-1">{item.title}</h3>
+                      <p className="text-sm text-zinc-400 leading-relaxed">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {activeTab === 'script' && (
             <div className="animate-fadeIn space-y-6 print:hidden">
               <h2 className="text-2xl font-bold">Breakdown Naskah Cerita</h2>
@@ -556,7 +592,6 @@ Hasilkan JSON Murni: { "positivePrompt": "...", "negativePrompt": "..." }`;
             </div>
           )}
 
-          {}
           {activeTab === 'assets' && (
             <div className="animate-fadeIn space-y-6 print:hidden">
               <div className="flex justify-between items-center">
@@ -581,7 +616,6 @@ Hasilkan JSON Murni: { "positivePrompt": "...", "negativePrompt": "..." }`;
             </div>
           )}
 
-          {}
           {activeTab === 'builder' && (
             <div className="animate-fadeIn space-y-6 print:hidden">
               <div className="flex justify-between items-center">
@@ -672,7 +706,6 @@ Hasilkan JSON Murni: { "positivePrompt": "...", "negativePrompt": "..." }`;
             </div>
           )}
 
-          {}
           {activeTab === 'history' && (
             <div className="animate-fadeIn space-y-6">
               <div className="flex justify-between items-center print:hidden">
@@ -706,7 +739,6 @@ Hasilkan JSON Murni: { "positivePrompt": "...", "negativePrompt": "..." }`;
             </div>
           )}
 
-          {}
           {activeTab === 'settings' && (
             <div className="animate-fadeIn space-y-6 print:hidden">
               <h2 className="text-2xl font-bold">Pengaturan Aplikasi</h2>
@@ -753,7 +785,6 @@ Hasilkan JSON Murni: { "positivePrompt": "...", "negativePrompt": "..." }`;
         </div>
       </main>
 
-      {}
       {isAssetModalOpen && editingAsset && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:hidden">
           <div className="bg-zinc-900 border border-zinc-800 w-full max-w-xl rounded-2xl flex flex-col shadow-2xl">
