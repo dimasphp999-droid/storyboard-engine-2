@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Film, Save, Trash2, Mic, FileText, Upload, Settings, Info, Image as ImageIcon, BookOpen, Download, AlertTriangle, ShieldAlert, FileUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Camera, Film, Save, Trash2, FileText, Settings, Image as ImageIcon, BookOpen, Download, AlertTriangle, FileUp } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('breakdown');
@@ -95,6 +95,7 @@ export default function App() {
         });
         setBreakdownResults(parsed.shots || []);
       } catch (err) {
+        console.error(err);
         alert("Gagal membaca format balasan AI. Coba lagi.");
       }
     }
@@ -122,7 +123,7 @@ export default function App() {
         const parsed = JSON.parse(res);
         setFormState(prev => ({ ...prev, ...parsed }));
       } catch (err) {
-        console.error("Parse Error");
+        console.error("Parse Error", err);
       }
     }
     setIsLoading(false);
@@ -182,6 +183,7 @@ export default function App() {
           if (imported.playbook) setPlaybook(imported.playbook);
           alert("Proyek berhasil direstore!");
         } catch (err) {
+          console.error(err);
           alert("File tidak valid!");
         }
       };
