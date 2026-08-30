@@ -30,6 +30,7 @@ export default function App() {
     antiGlitch: false
   });
   const [generatedPrompt, setGeneratedPrompt] = useState('');
+  const [newTag, setNewTag] = useState({ tag: '', desc: '', type: 'character' });
 
   useEffect(() => { localStorage.setItem('geminiApiKey', apiKey); }, [apiKey]);
   useEffect(() => { localStorage.setItem('savedScript', scriptInput); }, [scriptInput]);
@@ -193,7 +194,6 @@ export default function App() {
     }
   };
 
-  const [newTag, setNewTag] = useState({ tag: '', desc: '', type: 'character' });
   const handleAddTag = () => {
     if(newTag.tag && newTag.desc) {
        setTags([...tags, newTag]);
@@ -252,7 +252,7 @@ export default function App() {
         ))}
       </aside>
 
-      {/* MAIN CONTENT */}
+      {      /* MAIN CONTENT */}
       <main className="flex-1 p-8 overflow-y-auto h-screen">
         
         {activeTab === 'breakdown' && (
@@ -305,6 +305,7 @@ export default function App() {
           </div>
         )}
 
+        {}
         {activeTab === 'assets' && (
           <div className="max-w-4xl space-y-6">
             <h2 className="text-2xl font-bold text-white border-b border-gray-800 pb-2">Asset Library (@tags)</h2>
@@ -338,6 +339,7 @@ export default function App() {
           </div>
         )}
 
+        {}
         {activeTab === 'builder' && (
           <div className="max-w-5xl space-y-6">
             <div className="flex justify-between items-center border-b border-gray-800 pb-2">
@@ -390,6 +392,7 @@ export default function App() {
                 </div>
               </div>
 
+              {}
               {/* KOLOM KANAN: OUTPUT */}
               <div className="bg-gray-900 p-6 rounded-xl border border-gray-800 flex flex-col">
                 <h3 className="font-bold text-white mb-4">Hasil Prompt</h3>
@@ -423,6 +426,7 @@ export default function App() {
           </div>
         )}
 
+        {}
         {activeTab === 'history' && (
           <div className="max-w-4xl space-y-6">
             <h2 className="text-2xl font-bold text-white border-b border-gray-800 pb-2">Timeline Produksi</h2>
@@ -440,6 +444,7 @@ export default function App() {
           </div>
         )}
 
+        {}
         {activeTab === 'settings' && (
           <div className="max-w-3xl space-y-8">
             <h2 className="text-2xl font-bold text-white border-b border-gray-800 pb-2">Pengaturan Sistem</h2>
@@ -483,6 +488,7 @@ export default function App() {
           </div>
         )}
 
+        {}
         {activeTab === 'guide' && (
           <div className="max-w-4xl space-y-6">
             <h2 className="text-2xl font-bold text-white border-b border-gray-800 pb-2">Panduan 5 Level AI Prompting (Youri van Hofwegen)</h2>
